@@ -1,18 +1,24 @@
-module.exports = {
-  name: "Brat",
-  desc: "Brat text generator",
-  category: "Imagecreator",
-  path: "/imagecreator/bratv?apikey=&text=",
-  async run(req, res) {
-    const { apikey, text } = req.query;
-    if (!global.apikey.includes(apikey)) return res.json({ status: false, error: 'Apikey invalid' });
-    if (!text) return res.json({ status: false, error: 'Missing text' });
+import axios from "axios";
 
-    const buffer = await getBuffer(`https://api.deline.web.id/maker/brat?text=${encodeURIComponent(text)`);
-    res.writeHead(200, {
-      'Content-Type': 'image/gif',
-      'Content-Length': buffer.length,
-    });
-    res.end(buffer);
+export default async function handler(req, res) {
+  const { apikey, text } = req.query;
+
+  // cek api key
+  if (!global.apikey?.includes(apikey)) {
+    return res.status(403).json({ status: false, error: "Apikey invalid" });
   }
+
+  if (!text) {
+    return res.status(400).json({ status: false, error: "Missing text" });
   }
+
+  try {
+    const url = `https://api.deline.web.id/maker/brat?text=${encodeURIComponent(text)}`;
+    const response = await axios.get(url, { responseType: "arraybuffer" });
+
+    res.setHeader("Content-Type", "image/png");
+    res.send(response.data);
+  } catch (e) {
+    res.status(500).json({ status: false, error: "API error", detail: e.message });
+  }
+}
